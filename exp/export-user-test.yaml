@@ -1,0 +1,15 @@
+exp: unfreeze-mlm
+mode: export
+freeze_emb: false
+load:
+  load_ckpt: unfreeze-mlm/epoch_19.bin
+  relax_load: false
+policy:
+  batch_size: 16
+  device: gpu
+save:
+  layers: 0
+  layer_strategy: mean
+  union_strategy: mean
+  feature_path: user.test.u.last.d768.e19.npy
+  key: uid

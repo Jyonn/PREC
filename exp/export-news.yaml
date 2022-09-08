@@ -1,0 +1,16 @@
+exp: export-mlm
+mode: export
+freeze_emb: false
+apply_cols: null
+load:
+  load_ckpt: mlm-after-align/epoch_9.bin
+  relax_load: false
+policy:
+  batch_size: 64
+  device: gpu
+save:
+  layers: 0
+  layer_strategy: mean
+  union_strategy: mean
+  feature_path: newsencoder.npy
+  key: nid

@@ -1,0 +1,21 @@
+exp: mind-mlm-news
+mode: train
+tasks:
+  - mlm
+  - align
+freeze_emb: false
+load:
+  load_ckpt: null
+  relax_load: true
+  load_model_only: true
+policy:
+  neg_ratio: 20
+  epoch: 10
+  epoch_start: 0
+  lr: 0.0002
+  batch_size: 64
+  accumulate_batch: 2
+  device: gpu
+  n_warmup: 16000
+  check_interval: -20
+  store_interval: 5

@@ -1,0 +1,23 @@
+dataset: MINDsmall-user
+store:
+  data_dir: data/MIND/MINDsmall/user/
+  save_dir: saving/MINDsmall-user/L{num_hidden_layers}H{num_attention_heads}E{hidden_size}-B{batch_size}/
+data:
+  shuffle: true
+  split:
+    train: 8
+    dev: 2
+  order:
+    - history
+  append:
+    - uid
+bert_config:
+  hidden_size: 768
+  num_hidden_layers: 6
+  num_attention_heads: 12
+embedding:
+  -
+    vocab_name: nid
+    vocab_type: numpy
+    path: saving/MINDsmall/L3H12E768-B64/unfreeze-mlm/u-d768-e49.npy
+    freeze: true
