@@ -6,7 +6,7 @@ COLING 2022 Oral Paper
 @inproceedings{liu2022boosting,
   title={Boosting Deep CTR Prediction with a Plug-and-Play Pre-trainer for News Recommendation},
   author={Liu, Qijiong and Zhu, Jieming and Dai, Quanyu and Wu, Xiaoming},
-  booktitle = "Proceedings of the 28th International Conference on Computational Linguistics",
+  booktitle = {Proceedings of the 28th International Conference on Computational Linguistics},
   year={2022}
 }
 ```
