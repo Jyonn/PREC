@@ -30,7 +30,7 @@ python build_dataset.py
 ## Pre-train news pre-trainer
 
 ```bash
-python worker.py --config config/MINDsmall-3L12H768D.yaml --exp exp/mind-mlm-news.yaml
+python worker.py --config config/MINDsmall-3L12H768D.yaml --exp exp/mind-news.yaml
 ```
 
 ## Export news representation
@@ -42,7 +42,7 @@ python worker.py --config config/MINDsmall-3L12H768D.yaml --exp exp/export-news.
 ## Pre-train user pre-trainer
 
 ```bash
-python worker.py --config config/MINDsmall-user-6L12H768D.yaml --exp exp/mind-mlm-user.yaml
+python worker.py --config config/MINDsmall-user-6L12H768D.yaml --exp exp/mind-user.yaml
 ```
 
 ## Export user representation
