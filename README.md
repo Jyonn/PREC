@@ -1,6 +1,6 @@
 # PREC: Boosting Deep CTR Prediction with a Plug-and-Play Pre-trainer for News Recommendation
 
-COLING 2022 Oral Paper
+COLING 2022 Oral Paper [aclanthology](https://aclanthology.org/2022.coling-1.249/)
 
 ```
 @inproceedings{liu2022prec,
