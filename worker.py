@@ -5,6 +5,7 @@ from typing import Union
 
 import numpy as np
 import torch
+from UniTok import Vocab
 from tqdm import tqdm
 from transformers import get_linear_schedule_with_warmup
 
@@ -12,8 +13,10 @@ from transformers import get_linear_schedule_with_warmup
 from loader.data import Data
 from loader.task_depot.pretrain_task import PretrainTask
 from model.auto_bert import AutoBert
-from utils.config_initializer import init_config
+from utils.config_init import ConfigInit
+# from utils.config_initializer import init_config
 from utils.gpu import GPU
+from utils.monitor import Monitor
 from utils.random_seed import seeding
 from utils.time_printer import printer as print
 from utils.logger import Logger
@@ -104,6 +107,12 @@ class Worker:
             ))
 
     def train(self):
+        monitor = Monitor(
+            save_dir=self.args.store.save_dir,
+            top=1,
+            early_stop=self.exp.policy.early_stop,
+        )
+
         self.logging('Start Training')
         tasks = self.exp.tasks
         tasks = [self.data.pretrain_depot[task] if isinstance(task, str) else task for task in tasks]
@@ -125,11 +134,10 @@ class Worker:
                 )
 
                 loss = task.calculate_loss(batch, task_output)
-
-                loss.loss.backward()
+                loss.backward()
 
                 accumulate_step += 1
-                if accumulate_step == self.exp.policy.accumulate_batch:
+                if accumulate_step >= self.exp.policy.accumulate_batch:
                     self.m_optimizer.step()
                     self.m_scheduler.step()
                     self.m_optimizer.zero_grad()
@@ -149,15 +157,19 @@ class Worker:
                          "task {}, "
                          "loss {:.4f}".format(epoch, task.name, avg_loss))
 
-            if (epoch + 1) % self.exp.policy.store_interval == 0:
-                epoch_path = os.path.join(self.args.store.ckpt_path, 'epoch_{}.bin'.format(epoch))
-                state_dict = dict(
-                    model=self.model.state_dict(),
-                    optimizer=self.m_optimizer.state_dict(),
-                    scheduler=self.m_scheduler.state_dict(),
-                    __rec__=True
+            try:
+                monitor.push(
+                    epoch=epoch,
+                    loss=avg_loss,
+                    state_dict=dict(
+                        model=self.model.state_dict(),
+                        optimizer=self.m_optimizer.state_dict(),
+                        scheduler=self.m_scheduler.state_dict(),
+                        __rec__=True
+                    )
                 )
-                torch.save(state_dict, epoch_path)
+            except:
+                break
         self.logging('Training Ended')
 
     def dev(self, task: Union[str, PretrainTask]):
@@ -188,6 +200,7 @@ class Worker:
         #     union_strategy=self.exp.save.union_strategy,
         # )
         features = torch.zeros(
+            self.args.bert_config.num_hidden_layers,
             self.data.depot.sample_size,
             self.args.bert_config.hidden_size,
             dtype=torch.float
@@ -199,16 +212,50 @@ class Worker:
             for batch in tqdm(loader):
                 with torch.no_grad():
                     task_output = self.model(batch=batch, task=self.data.non_task)
-                    task_output = task_output.last_hidden_state.detach()  # [B, S, D]
-                    if self.exp.save.layer_strategy == 'mean':
-                        attention_sum = batch['attention_mask'].to(self.device).sum(-1).unsqueeze(-1).repeat(1, 1, self.args.bert_config.hidden_size)
-                        attention_mask = batch['attention_mask'].to(self.device).unsqueeze(-1).repeat(1, 1, self.args.bert_config.hidden_size)
-                        features[batch['append_info'][self.exp.save.key]] = (task_output * attention_mask).sum(1) / attention_sum
-                    elif self.exp.save.layer_strategy == 'cls':
-                        features[batch['append_info'][self.exp.save.key]] = task_output[:, 0, :]
+                    hidden_states = task_output.hidden_states
 
-        save_path = os.path.join(self.args.store.ckpt_path, self.exp.save.feature_path)
-        np.save(save_path, features.cpu().numpy(), allow_pickle=False)
+                    for index, hidden_state in enumerate(hidden_states[1:]):
+                        if self.exp.save.layer_strategy == 'mean':
+                            attention_sum = batch['attention_mask'].to(
+                                self.device).sum(-1).unsqueeze(-1).repeat(1, 1, self.args.bert_config.hidden_size)
+                            attention_mask = batch['attention_mask'].to(
+                                self.device).unsqueeze(-1).repeat(1, 1, self.args.bert_config.hidden_size)
+                            features[index][batch['append_info'][self.exp.save.key]] = (hidden_state * attention_mask).sum(
+                                1) / attention_sum
+                        elif self.exp.save.layer_strategy == 'cls':
+                            features[index][batch['append_info'][self.exp.save.key]] = hidden_state[:, 0, :]
+
+        save_path = os.path.join(self.args.store.save_dir, self.exp.save.feature_path)
+        features = features.cpu()
+
+        if self.exp.save.translate_vocab:
+            print('translate vocab')
+
+            original_vocab = self.data.depot.vocab_depot(name='nid')
+            translate_vocab = Vocab(name='nid')
+            translate_vocab.load(self.exp.save.translate_vocab, as_path=True)
+
+            assert original_vocab.get_size() == translate_vocab.get_size()
+
+            new_features = torch.zeros(
+                self.args.bert_config.num_hidden_layers,
+                self.data.depot.sample_size,
+                self.args.bert_config.hidden_size,
+                dtype=torch.float
+            )
+            for index in translate_vocab.index2obj:
+                new_features[:, index, :] = features[:, original_vocab.obj2index[translate_vocab.index2obj[index]], :]
+            features = new_features
+
+        if self.exp.save.union_strategy == 'mean':
+            features = features.mean(0)
+        elif self.exp.save.union_strategy == 'last':
+            features = features[-1]
+        else:
+            assert self.exp.save.union_strategy == 'raw'
+            features = features.transpose(0, 1)
+
+        np.save(save_path, features.numpy(), allow_pickle=False)
 
     def run(self):
         if self.exp.mode == 'train':
@@ -228,7 +275,11 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    config, exp = init_config(args.config, args.exp)
+    # config, exp = init_config(args.config, args.exp)
+    config = ConfigInit(makedirs=[
+        'config.store.save_dir',
+    ]).parse(args)
+    config, exp = config.config, config.exp
 
     seeding(2021)
 

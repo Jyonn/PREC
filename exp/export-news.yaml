@@ -3,14 +3,15 @@ mode: export
 freeze_emb: false
 apply_cols: null
 load:
-  load_ckpt: mlm-after-align/epoch_9.bin
+  load_ckpt: ../mind-mlm-news/epoch_48.bin
   relax_load: false
 policy:
-  batch_size: 64
+  batch_size: 100
   device: gpu
 save:
   layers: 0
   layer_strategy: mean
-  union_strategy: mean
-  feature_path: newsencoder.npy
+  union_strategy: last
+  feature_path: newsencoder-${exp.save.union_strategy}.npy
+  translate_vocab: /data1/qijiong/Code/NewsRecommenders/data/MIND-small/news/tok.nid.dat
   key: nid

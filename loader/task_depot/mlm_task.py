@@ -65,7 +65,7 @@ class MLMTask(PretrainTask):
         mask_labels = torch.ones(batch_size, self.dataset.max_sequence, dtype=torch.long) * -100
         batch['mask_labels_col'] = copy.deepcopy(col_mask)
 
-        for col_name in self.depot.col_info.d:
+        for col_name in self.depot.col_info:
             if col_name not in col_mask:
                 continue
 
@@ -94,7 +94,7 @@ class MLMTask(PretrainTask):
         module_dict = dict()
         print('[IN MLM TASK]')
         for col_name in self.dataset.order:
-            vocab = self.depot.col_info.d[col_name].vocab
+            vocab = self.depot.col_info[col_name].vocab
             if vocab in module_dict:
                 print('Escape create modules for', col_name, '(', vocab, ')')
                 continue
@@ -110,7 +110,7 @@ class MLMTask(PretrainTask):
         last_hidden_state = bert_output.last_hidden_state
         output_dict = dict()
         for col_name in self.dataset.order:
-            vocab = self.depot.col_info.d[col_name].vocab
+            vocab = self.depot.col_info[col_name].vocab
             classification_module = self.extra_module[vocab]
             output_dict[col_name] = classification_module(last_hidden_state)
         return output_dict

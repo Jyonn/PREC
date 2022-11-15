@@ -1,4 +1,5 @@
 from UniTok import UniDep
+from oba import Obj
 
 from loader.bert_dataloader import BertDataLoader
 from loader.bert_dataset import BertDataset
@@ -29,7 +30,7 @@ class Data:
         self.device = device
 
         self.depot = DepotFilter(self.args.store.data_dir)
-        if 'filter' in self.args.data.d:
+        if 'filter' in self.args.data:
             print('Origin Depot', self.depot.sample_size)
             for col in self.args.data.filter.remove_empty:
                 self.depot.remove_empty(col)
@@ -43,7 +44,7 @@ class Data:
             weight=self.args.data.split.dev
         )
 
-        self.mlm_task = MLMTask(old_mask='old_mask' in self.exp.d, apply_cols=self.exp.apply_cols)
+        self.mlm_task = MLMTask(old_mask='old_mask' in self.exp, apply_cols=self.exp.apply_cols)
         self.cat_task = CategorizeTask(cat_col='cat')
         self.align_task = AlignTask()
         self.non_task = NonTask()
@@ -76,13 +77,13 @@ class Data:
 
         self.embedding_init = EmbeddingInit()
         for embedding_info in self.args.embedding:
-            self.embedding_init.append(**embedding_info.d, global_freeze=self.exp.freeze_emb)
+            self.embedding_init.append(**Obj.raw(embedding_info), global_freeze=self.exp.freeze_emb)
 
         self.bert_init = BertInit(
             dataset=self.t_set,
             embedding_init=self.embedding_init,
             global_freeze=self.exp.freeze_emb,
-            **self.args.bert_config.d,
+            **Obj.raw(self.args.bert_config),
         )
 
         self.pretrain_depot = PretrainDepot(

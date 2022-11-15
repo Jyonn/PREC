@@ -52,7 +52,7 @@ class BertInit:
         embedding_tables = dict()
         required_vocabs = set()
         for col_name in self.dataset.order:
-            required_vocabs.add(self.dataset.depot.col_info.d[col_name].vocab)
+            required_vocabs.add(self.dataset.depot.col_info[col_name].vocab)
 
         print('global freeze:', self.global_freeze)
 

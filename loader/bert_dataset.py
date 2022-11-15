@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 from UniTok import UniDep
+from oba import Obj
 
 from torch.utils.data import Dataset
 
@@ -22,12 +23,12 @@ class BertDataset(Dataset):
         self.max_sequence = 1  # [CLS]
         self.token_types = 0
 
-        order = order or []
+        order = Obj.raw(order) or []
         if not isinstance(order, list):
             order = [order]
         null_order = not order
 
-        self.col_info = depot.col_info.dict()
+        self.col_info = Obj.raw(depot.col_info)
 
         for col_name in self.col_info:
             if col_name != depot.id_col:

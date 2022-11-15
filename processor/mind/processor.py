@@ -80,21 +80,17 @@ class MindProcessor(Processor):
         return pd.DataFrame(data)
 
     @staticmethod
-    def build_news_ut(with_body_data, full_length=False):
-        news_ut = UniTok()
-        nid = IdTok(name='nid')
-        cat_tok = EntTok(name='cat')
+    def build_news_ut(full_length=False):
         txt_tok = BertTok(name='english', vocab_dir='bert-base-uncased')
 
-        news_ut.add_col(Column(
-            name='nid',
-            tokenizer=nid.as_sing(),
-        )).add_col(Column(
+        return UniTok().add_index_col(
+            name='nid'
+        ).add_col(Column(
             name='cat',
-            tokenizer=cat_tok.as_sing()
+            tokenizer=EntTok(name='cat').as_sing()
         )).add_col(Column(
-            name='subCat',
-            tokenizer=cat_tok.as_sing(),
+            name='subcat',
+            tokenizer=EntTok(name='subcat').as_sing(),
         )).add_col(Column(
             name='title',
             tokenizer=txt_tok.as_list(max_length=0 if full_length else 25),
@@ -102,12 +98,6 @@ class MindProcessor(Processor):
             name='abs',
             tokenizer=txt_tok.as_list(max_length=0 if full_length else 120),
         ))
-        if with_body_data:
-            news_ut.add_col(Column(
-                name='body',
-                tokenizer=txt_tok.as_list(max_length=0 if full_length else 1000),
-            ))
-        return news_ut
 
     @staticmethod
     def build_user_ut(nid: Vocab, max_history: int = 0):

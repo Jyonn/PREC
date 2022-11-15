@@ -13,6 +13,9 @@ class TaskLoss:
     def __init__(self, loss):
         self.loss = loss
 
+    def backward(self):
+        self.loss.backward()
+
 
 class PretrainTask:
     def __init__(self, name):
@@ -65,7 +68,7 @@ class PretrainTask:
                 table = table_dict[col_name]
                 seg_embedding = self._get_special_seg_embedding(matrix, table).to(self.device)
             else:
-                vocab = self.depot.col_info.d[col_name].vocab
+                vocab = self.depot.col_info[col_name].vocab
                 table = table_dict[vocab]
                 seg_embedding = self._get_seg_embedding(matrix, table).to(self.device)
             col_mask = col_mask.unsqueeze(-1).repeat(1, 1, embedding_size).to(self.device)

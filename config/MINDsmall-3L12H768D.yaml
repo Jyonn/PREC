@@ -1,7 +1,9 @@
 dataset: MINDsmall
 store:
-  data_dir: data/MIND/MINDsmall-rec/news/
-  save_dir: saving/MINDsmall/L{num_hidden_layers}H{num_attention_heads}E{hidden_size}-B{batch_size}/
+  base_dir: /home/qijiong/Code/MINDRec
+  data_dir: ${config.store.base_dir}/data/MIND/MINDsmall-rec/news
+  save_dir: saving/MINDsmall/L${config.bert_config.num_hidden_layers}H${config.bert_config.num_attention_heads}E${config.bert_config.hidden_size}-B${exp.policy.batch_size}/${exp.exp}
+  log_path: ${config.store.save_dir}/exp.log
 data:
   shuffle: true
   split:
@@ -22,5 +24,5 @@ embedding:
   -
     vocab_name: english
     vocab_type: bert_tf
-    path: pretrained/bert-base-uncased
+    path: ${config.store.base_dir}/pretrained/bert-base-uncased
     freeze: false
